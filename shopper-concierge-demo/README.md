@@ -1,6 +1,6 @@
 # Shopper's Concierge Agent (Kurly 커스텀 버전)
 
-이 프로젝트는 Google Cloud의 Shopper's Concierge Agent 데모를 기반으로 하여, **마켓컬리(Market Kurly)** 스타일의 UI와 고도화된 검색 기능을 추가한 버전입니다. 사용자의 질문을 이해하고 최적의 상품을 추천해주는 AI 쇼핑 어시스턴트 데모입니다.
+이 프로젝트는 Google Cloud의 Shopper's Concierge Agent 데모를 기반으로 하여, **마켓컬리(Market Kurly)** 스타일의 UI와 Mock Data, 고도화된 검색 기능을 추가한 버전입니다. 사용자의 질문을 이해하고 최적의 상품을 추천해주는 AI 쇼핑 어시스턴트 데모입니다.
 
 ---
 
