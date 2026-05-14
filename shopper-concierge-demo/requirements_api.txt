@@ -4,4 +4,4 @@ google-cloud-aiplatform
 google-cloud-bigquery
 pydantic
 python-dotenv
-google-generativeai
+google-genai

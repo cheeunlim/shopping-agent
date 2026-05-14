@@ -32,6 +32,10 @@
 - **실제 이미지 링크 적용**: 가짜 데이터 대신 실제 동작하는 이미지 URL을 포함하도록 제품 데이터를 업데이트했습니다.
 - **BigQuery 연동**: 정제된 데이터를 BigQuery(`market_kurly.products`)에 적재하여 실시간으로 메타데이터를 조회할 수 있도록 구현했습니다.
 
+### 4. 멀티 에이전트 확장 (Multi-Agent Expansion)
+- **서브 에이전트 추가**: 검색 쿼리 생성을 돕는 `Research Agent` 외에, 리뷰 분석을 전담하는 `Review Agent`와 이미지/분위기 기반 검색을 돕는 `Vibe Agent`를 추가하여 기능을 세분화했습니다.
+- **BigQuery 리뷰 데이터 연동**: 상품 데이터뿐만 아니라 실제 리뷰 데이터(`market_kurly.reviews`)를 BigQuery에 적재하고, 이를 검색할 수 있는 도구(`query_reviews`)를 추가했습니다.
+
 ---
 
 ## 🛠 프로젝트 구조 (Project Structure)
@@ -40,8 +44,11 @@
 
 - **`shopper_concierge/`**: 핵심 ADK 에이전트 폴더
   - **`agent.py`**: 전체 워크플로우를 오케스트레이션하는 메인 `root_agent` 정의.
-  - **`sub_agents/research_agent.py`**: Google Search를 활용해 사용자 의도를 파악하고 쿼리를 생성하는 서브 에이전트.
-  - **`tools.py`**: 벡터 검색 백엔드에서 상품을 조회하는 `find_shopping_items` 도구 포함.
+  - **`sub_agents/`**: 서브 에이전트 정의 폴더
+    - **`research_agent.py`**: Google Search를 활용해 사용자 의도를 파악하고 쿼리를 생성하는 서브 에이전트.
+    - **`review_agent.py`**: 리뷰 분석을 전담하는 서브 에이전트.
+    - **`vibe_agent.py`**: 이미지 및 분위기 기반 검색을 돕는 서브 에이전트.
+  - **`tools.py`**: 벡터 검색(`find_shopping_items`) 및 리뷰 검색(`query_reviews`) 도구 포함.
 - **`app/`**: 사용자가 인터랙션할 수 있는 Gradio 기반의 웹 애플리케이션 (Vertex AI Agent Engine 연동).
 - **`middleware_api.py`**: Vertex AI Vector Search와 BigQuery를 연결해주는 FastAPI 기반의 미들웨어.
 
@@ -72,22 +79,24 @@
 |                 v                                                 |
 |  +-------------------------------------------------------------+  |
 |  | Vertex AI Agent Engine                                      |  |
-|  |                                                             |  |   
+|  |                                                             |  |
 |  |  +-----------------------+   +--------------------------+   |  |
-|  |  | Shopper Concierge     |-->| Research Sub-Agent       |   |  |   
-|  |  | (Root Agent)          |   | (Uses Google Search)     |   |  |   
+|  |  |                       |-->| Research Sub-Agent       |   |  |
+|  |  |                       |   +--------------------------+   |  |
+|  |  | Shopper Concierge     |-->| Review Sub-Agent         |   |  |
+|  |  | (Root Agent)          |   +--------------------------+   |  |
+|  |  |                       |-->| Vibe Sub-Agent           |   |  |
 |  |  +-----------------------+   +--------------------------+   |  |
 |  |            |                                                |  |
 |  +------------|------------------------------------------------+  |
-|               | 3. Call Vector Search API                         |
+|               | 3. Call Tools (Vector Search / BigQuery)          |
 +---------------|---------------------------------------------------+
                 |
                 v
 +----------------------------------+
-|                                  |
-| Vector Search Backend            |
-| (External API Endpoint)          |
-|                                  |
+| External APIs & Services         |
+| - Vector Search Endpoint         |
+| - BigQuery (Reviews)             |
 +----------------------------------+
 ```
 
@@ -129,7 +138,7 @@ uv pip install -r requirements.txt
    ```
    배포 명령을 실행합니다:
    ```bash
-   adk deploy agent_engine shopper_concierge_demo/shopper_concierge \
+   adk deploy agent_engine shopper-concierge-demo/shopper_concierge \
      --staging_bucket="gs://[YOUR_STAGING_BUCKET]" \
      --display_name="Shopper Concierge" \
      --project="[YOUR_PROJECT_ID]" \
@@ -163,8 +172,16 @@ uv pip install -r requirements.txt
 
 ## 📝 사용 예시 (Example Usage)
 
-Gradio 앱이 실행되면 다음과 같이 질문할 수 있습니다.
+Gradio 앱이 실행되면 다음과 같이 다양한 방식으로 질문할 수 있습니다.
 
+### 1. 일반적인 상품 추천 (Research + Vector Search)
 > "지성 피부가 사용할 만한 파운데이션을 추천해줘."
+에이전트는 `Research Sub-Agent`를 통해 지성 피부에 맞는 검색 쿼리를 생성하고, Vector Search를 통해 최적의 상품을 추천합니다.
 
-에이전트는 먼저 Research Sub-Agent를 통해 "지성 피부", "파운데이션"에 대한 검색을 수행하여 최적의 검색 쿼리를 생성합니다. 이후 Vector Search 백엔드를 조회하여 가장 적합한 상품 리스트를 사용자에게 추천합니다.
+### 2. 리뷰 기반 추천 및 검증 (Review Agent + BigQuery)
+> "이 샴푸 써본 사람들 후기가 어때? 탈모 예방에 좋다는 말이 있어?"
+에이전트는 `Review Sub-Agent`를 활용하여 BigQuery에서 해당 상품의 리뷰를 검색하고 요약하여 답변합니다.
+
+### 3. 분위기/이미지 기반 검색 (Vibe Agent)
+> "(특정 이미지나 설명을 제공하며) 이런 느낌의 홈파티용 그릇 세트 찾아줘."
+에이전트는 `Vibe Sub-Agent`를 통해 사용자가 원하는 '분위기(Vibe)'를 분석하여 키워드를 생성하고 유사한 상품을 추천합니다.

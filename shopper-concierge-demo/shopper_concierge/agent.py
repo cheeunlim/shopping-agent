@@ -7,7 +7,9 @@ from google.adk.tools.agent_tool import AgentTool
 
 from .prompts import instruction_shop
 from .sub_agents.research_agent import research_agent
-from .tools import find_shopping_items
+from .sub_agents.review_agent import review_agent
+from .sub_agents.vibe_agent import vibe_agent
+from .tools import find_shopping_items, query_reviews
 
 root_agent = Agent(
   model="gemini-2.5-flash",
@@ -16,6 +18,9 @@ root_agent = Agent(
   instruction=instruction_shop,
   tools=[
     AgentTool(agent=research_agent),
+    AgentTool(agent=review_agent),
+    AgentTool(agent=vibe_agent),
     find_shopping_items,
+    query_reviews,
   ],
 )

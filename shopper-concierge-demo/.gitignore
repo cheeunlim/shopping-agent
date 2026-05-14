@@ -1,2 +1,6 @@
 .env
-/app/.env
+app/.env
+.venv
+__pycache__/
+*.pyc
+shopper_concierge/expand_dataset.py

@@ -12,7 +12,7 @@ research_agent = Agent(
   name="research_agent",
   description=(
     "A market researcher for an e-commerce site. Receives a search request "
-    "from a user, and returns a list of 5 generated queries in English."
+    "from a user, and returns a list of 5 generated queries in Korean."
   ),
   instruction=instruction_research,
   tools=[google_search],

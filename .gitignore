@@ -1,0 +1,12 @@
+# OS generated files
+**/.DS_Store
+
+# Temp folders from deployment
+**/shopper_concierge_tmp*/
+
+# Large data files and logs
+**/kurly_embeddings.json
+**/kurly_reviews.jsonl
+**/generate_reviews.log
+**/kurly_expanded_data.jsonl
+**/kurly_mock_data.jsonl

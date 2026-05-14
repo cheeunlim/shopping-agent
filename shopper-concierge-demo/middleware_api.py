@@ -7,11 +7,14 @@ from google.cloud import bigquery
 from dotenv import load_dotenv
 import vertexai
 from vertexai.language_models import TextEmbeddingModel
-import google.generativeai as genai
+from google import genai
+from google.genai import types
 
 # Load environment variables
 load_dotenv()
-genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+
+# Initialize Gemini Client (uses GEMINI_API_KEY from env)
+client = genai.Client()
 
 PROJECT_ID = os.getenv("PROJECT_ID")
 REGION = os.getenv("REGION")
@@ -33,12 +36,15 @@ class SearchResponse(BaseModel):
     items: List[dict]
 
 def get_query_embedding(query_text: str) -> List[float]:
-    """Generates a text embedding for the query text using gemini-embedding-2-preview."""
+    """Generates a text embedding for the query text using gemini-embedding-2."""
     try:
-        model = "models/gemini-embedding-2-preview"
+        model = "gemini-embedding-2"
         formatted_query = f"task: search result | query: {query_text}"
-        embedding = genai.embed_content(model=model, content=formatted_query)
-        return embedding['embedding']
+        result = client.models.embed_content(
+            model=model,
+            contents=formatted_query
+        )
+        return result.embeddings[0].values
     except Exception as e:
         print(f"Error generating embedding: {e}")
         raise e
@@ -74,7 +80,7 @@ def get_metadata(ids: List[str]) -> List[dict]:
         
         # Safe query with parameterization
         query = f"""
-            SELECT id, name, description, img_url 
+            SELECT id, name, description 
             FROM `{BQ_TABLE}` 
             WHERE id IN UNNEST(@ids)
         """
@@ -92,8 +98,7 @@ def get_metadata(ids: List[str]) -> List[dict]:
             items.append({
                 "id": row.id,
                 "name": row.name,
-                "description": row.description,
-                "img_url": row.img_url
+                "description": row.description
             })
             
         # Sort results to match the order of IDs returned by Vector Search
